@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>BYNEST — Split Second Math Arena</title>
+<style>
+  :root{
+    --bg:#0A0E17;
+    --bg-2:#0E1422;
+    --panel:#121826;
+    --panel-2:#1A2233;
+    --bezel:#060A12;
+    --line:#26304A;
+    --cyan:#4CE0D2;
+    --magenta:#FF5FA2;
+    --amber:#FFC857;
+    --danger:#FF6B6B;
+    --text:#EAF0F6;
+    --text-dim:#8B98AC;
+    --input-bg:#0E1422;
+    --input-text:#FFFFFF;
+    --font-ui:'Space Grotesk', system-ui, sans-serif;
+    --font-mono:'Space Mono', 'SF Mono', monospace;
+    color-scheme: dark;
+  }
+  /* Light variant kept fully self-consistent so text never goes light-on-light */
+  :root[data-theme="light"]{
+    --bg:#EDEFF5; --bg-2:#E3E6EF; --panel:#F6F7FB; --panel-2:#FFFFFF;
+    --bezel:#C9CDDA; --line:#D3D7E3;
+    --text:#161A22; --text-dim:#5B6478;
+    --input-bg:#FFFFFF; --input-text:#101319;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: light){
+    :root:not([data-theme="dark"]){
+      --bg:#EDEFF5; --bg-2:#E3E6EF; --panel:#F6F7FB; --panel-2:#FFFFFF;
+      --bezel:#C9CDDA; --line:#D3D7E3;
+      --text:#161A22; --text-dim:#5B6478;
+      --input-bg:#FFFFFF; --input-text:#101319;
+      color-scheme: light;
+    }
+  }
+  *{box-sizing:border-box;}
+  html,body{height:100%;}
+  body{
+    margin:0;
+    background:
+      radial-gradient(1100px 700px at 15% -10%, rgba(76,224,210,0.08), transparent 60%),
+      radial-gradient(900px 600px at 110% 10%, rgba(255,95,162,0.07), transparent 55%),
+      var(--bg);
+    color:var(--text);
+    font-family:var(--font-ui);
+    min-height:100%;
+    padding-top:env(safe-area-inset-top,0px);
+    padding-bottom:env(safe-area-inset-bottom,0px);
+    -webkit-font-smoothing:antialiased;
+  }
+  html{scroll-padding-top:env(safe-area-inset-top,0px);}
+  a{color:inherit;}
+  button{font-family:inherit;}
+  ::selection{background:var(--cyan); color:#04110F;}
+
+  .wrap{max-width:980px;margin:0 auto;padding:22px 18px 48px;}
+
+  .topbar{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:18px;flex-wrap:wrap;}
+  .brand{display:flex;align-items:center;gap:10px;}
+  .brand .mark{
+    width:36px;height:36px;border-radius:9px;background:linear-gradient(160deg,var(--cyan),var(--magenta));
+    display:flex;align-items:center;justify-content:center;font-family:var(--font-mono);font-weight:700;color:#060A12;font-size:16px;flex-shrink:0;
+  }
+  .brand h1{font-size:19px;margin:0;font-weight:600;letter-spacing:0.2px;}
+  .brand .tag{font-size:12px;color:var(--text-dim);font-family:var(--font-mono);}
+
+  .profile-chip{
+    display:flex;align-items:center;gap:9px;background:var(--panel);border:1px solid var(--line);border-radius:999px;
+    padding:6px 14px 6px 6px;font-size:13.5px;cursor:pointer;transition:border-color .15s ease;color:var(--text);
+  }
+  .profile-chip:hover{border-color:var(--cyan);}
+  .profile-chip .av{
+    width:26px;height:26px;border-radius:50%;background:var(--panel-2);display:flex;align-items:center;justify-content:center;
+    font-size:12px;font-weight:700;font-family:var(--font-mono);color:var(--cyan);border:1px solid var(--line);
+  }
+
+  .console{background:var(--bezel);border-radius:22px;padding:6px;box-shadow:0 30px 60px -30px rgba(0,0,0,0.6), inset 0 0 0 1px rgba(255,255,255,0.03);}
+  .screen{
+    background:linear-gradient(180deg,var(--panel),var(--bg-2));border-radius:17px;padding:26px;min-height:420px;
+    border:1px solid var(--line);position:relative;overflow:hidden;
+  }
+  @media (max-width:600px){ .screen{padding:18px;} }
+
+  .tabs{display:flex;gap:8px;margin:14px 0 0;flex-wrap:wrap;}
+  .tab{
+    font-family:var(--font-ui);font-size:13.5px;font-weight:600;background:var(--panel);border:1px solid var(--line);
+    color:var(--text-dim);border-radius:999px;padding:8px 16px;cursor:pointer;transition:all .15s ease;
+  }
+  .tab:hover{color:var(--text);border-color:#37456b;}
+  .tab.active{background:var(--cyan);color:#04110F;border-color:var(--cyan);}
+
+  h2.title{font-size:26px;margin:0 0 6px;font-weight:600;color:var(--text);}
+  p.sub{color:var(--text-dim);margin:0 0 22px;font-size:14.5px;line-height:1.55;max-width:56ch;}
+  .btn{
+    font-family:var(--font-ui);font-weight:600;font-size:14.5px;border-radius:11px;padding:12px 20px;border:1px solid transparent;
+    cursor:pointer;transition:transform .08s ease, filter .15s ease;display:inline-flex;align-items:center;gap:8px;justify-content:center;
+  }
+  .btn:active{transform:scale(0.97);}
+  .btn-primary{background:var(--cyan);color:#04110F;}
+  .btn-primary:hover{filter:brightness(1.08);}
+  .btn-magenta{background:var(--magenta);color:#1a0510;}
+  .btn-magenta:hover{filter:brightness(1.08);}
+  .btn-ghost{background:transparent;border:1px solid var(--line);color:var(--text);}
+  .btn-ghost:hover{border-color:var(--cyan);color:var(--cyan);}
+  .btn:disabled{opacity:0.45;cursor:not-allowed;}
+  .btn-block{width:100%;}
+
+  input[type=text], input[type=number], select{
+    font-family:var(--font-mono);font-size:15px;
+    background-color:var(--input-bg) !important;
+    color:var(--input-text) !important;
+    -webkit-text-fill-color:var(--input-text);
+    caret-color:var(--input-text);
+    border:1px solid var(--line);border-radius:9px;padding:11px 13px;width:100%;outline:none;transition:border-color .15s ease;
+  }
+  input:-webkit-autofill{ -webkit-text-fill-color:var(--input-text) !important; box-shadow:0 0 0 1000px var(--input-bg) inset; }
+  input[type=text]:focus, input[type=number]:focus, select:focus{border-color:var(--cyan);}
+  input::placeholder{color:var(--text-dim);opacity:0.85;}
+  label.field-label{font-size:12.5px;color:var(--text-dim);display:block;margin-bottom:6px;font-weight:600;}
+
+  :focus-visible{outline:2px solid var(--cyan);outline-offset:2px;}
+
+  .grid{display:grid;gap:12px;}
+  .grid-2{grid-template-columns:1fr 1fr;}
+  @media (max-width:560px){.grid-2{grid-template-columns:1fr;}}
+
+  .card{background:var(--panel-2);border:1px solid var(--line);border-radius:13px;padding:16px;color:var(--text);}
+
+  .fam-card{background:var(--panel-2);border:1px solid var(--line);border-radius:13px;padding:14px;}
+  .fam-card .fam-name{font-weight:700;font-size:15px;margin-bottom:2px;}
+  .fam-card .fam-desc{font-size:12px;color:var(--text-dim);font-family:var(--font-mono);margin-bottom:10px;}
+  .tier-row{display:flex;gap:6px;}
+  .tier-btn{
+    flex:1;background:var(--bg-2);border:1px solid var(--line);border-radius:8px;padding:8px 0;text-align:center;
+    font-family:var(--font-mono);font-weight:700;font-size:13.5px;cursor:pointer;color:var(--text);transition:all .12s ease;
+  }
+  .tier-btn:hover{border-color:var(--cyan);}
+  .tier-btn.selected{background:var(--cyan);color:#04110F;border-color:var(--cyan);}
+
+  .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;}
+  .divider{height:1px;background:var(--line);margin:20px 0;}
+
+  .toggle-group{display:flex;background:var(--bg-2);border:1px solid var(--line);border-radius:10px;padding:3px;gap:3px;}
+  .toggle-opt{flex:1;text-align:center;padding:8px 10px;border-radius:8px;font-size:13.5px;font-weight:600;cursor:pointer;color:var(--text-dim);}
+  .toggle-opt.on{background:var(--panel-2);color:var(--text);box-shadow:0 0 0 1px var(--line);}
+
+  .code-badge{
+    font-family:var(--font-mono);font-size:26px;letter-spacing:6px;font-weight:700;color:var(--amber);
+    background:var(--bg-2);border:1px dashed var(--line);border-radius:10px;padding:10px 18px;display:inline-block;
+  }
+
+  .lobby-row{display:flex;align-items:center;justify-content:space-between;gap:12px;background:var(--panel-2);border:1px solid var(--line);border-radius:11px;padding:12px 14px;}
+  .lobby-row .lname{font-weight:600;font-size:14.5px;}
+  .lobby-row .lmeta{font-size:12px;color:var(--text-dim);font-family:var(--font-mono);margin-top:2px;}
+
+  .player-row{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--line);}
+  .player-row:last-child{border-bottom:none;}
+  .player-row .av{
+    width:28px;height:28px;border-radius:50%;background:var(--bg-2);border:1px solid var(--line);display:flex;align-items:center;
+    justify-content:center;font-size:12px;font-weight:700;font-family:var(--font-mono);flex-shrink:0;
+  }
+  .player-row .pname{font-size:13.5px;font-weight:600;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .player-row .pscore{font-family:var(--font-mono);font-size:13px;color:var(--cyan);}
+  .host-tag{font-size:10px;font-family:var(--font-mono);color:var(--amber);border:1px solid var(--amber);border-radius:5px;padding:1px 5px;}
+
+  .game-layout{display:grid;grid-template-columns:1fr 220px;gap:18px;}
+  @media (max-width:680px){.game-layout{grid-template-columns:1fr;}}
+  .rail{background:var(--panel-2);border:1px solid var(--line);border-radius:13px;padding:14px;max-height:420px;overflow:auto;}
+  .rail h3{font-size:12px;color:var(--text-dim);margin:0 0 10px;font-weight:600;letter-spacing:0.3px;}
+
+  .timerbar{height:6px;border-radius:4px;background:var(--bg-2);overflow:hidden;margin-bottom:22px;}
+  .timerbar > div{height:100%;background:linear-gradient(90deg,var(--cyan),var(--amber));transition:width .18s linear;}
+
+  .qnum{font-family:var(--font-mono);font-size:12.5px;color:var(--text-dim);margin-bottom:10px;}
+  .equation{
+    font-family:var(--font-mono);font-weight:700;font-size:clamp(30px,6.5vw,50px);color:var(--text);
+    display:flex;align-items:center;gap:14px;margin:6px 0 26px;flex-wrap:wrap;
+  }
+  .equation .op{color:var(--magenta);}
+  .equation .eq{color:var(--text-dim);}
+
+  .choices{display:grid;grid-template-columns:1fr 1fr;gap:12px;max-width:420px;}
+  @media (max-width:420px){.choices{grid-template-columns:1fr;}}
+  .choice-btn{
+    background:var(--bg-2);border:2px solid var(--line);color:var(--text);border-radius:12px;padding:16px 10px;
+    font-family:var(--font-mono);font-weight:700;font-size:22px;cursor:pointer;transition:all .12s ease;
+  }
+  .choice-btn:hover:not(:disabled){border-color:var(--cyan);}
+  .choice-btn:disabled{cursor:not-allowed;}
+  .choice-btn.correct{border-color:var(--cyan);background:rgba(76,224,210,0.15);color:var(--cyan);}
+  .choice-btn.wrong{border-color:var(--danger);background:rgba(255,107,107,0.12);color:var(--danger);}
+  .choice-btn.dim{opacity:0.45;}
+
+  .feedback{margin-top:14px;font-family:var(--font-mono);font-size:13.5px;min-height:18px;}
+  .feedback.correct{color:var(--cyan);}
+  .feedback.wrong{color:var(--danger);}
+
+  .board-row{display:grid;grid-template-columns:34px 1fr auto auto;gap:12px;align-items:center;padding:11px 6px;border-bottom:1px solid var(--line);}
+  .board-row:last-child{border-bottom:none;}
+  .board-row .rank{font-family:var(--font-mono);color:var(--text-dim);font-size:13px;}
+  .board-row.winner{background:rgba(255,200,87,0.08);border-radius:9px;}
+  .board-row .rname{font-weight:600;font-size:14px;}
+  .board-row .rscore{font-family:var(--font-mono);color:var(--cyan);font-size:14px;}
+  .board-row .rtime{font-family:var(--font-mono);color:var(--text-dim);font-size:12px;}
+
+  .winner-banner{text-align:center;padding:22px 10px 8px;}
+  .winner-banner .crown{font-size:34px;}
+  .winner-banner .wname{font-size:24px;font-weight:700;margin-top:6px;}
+  .winner-banner .wsub{color:var(--text-dim);font-size:13px;margin-top:2px;}
+
+  .empty{color:var(--text-dim);font-size:13.5px;padding:18px 4px;text-align:center;}
+  .footnote{font-size:12px;color:var(--text-dim);margin-top:16px;line-height:1.5;}
+
+  #confetti-canvas{position:fixed;inset:0;pointer-events:none;z-index:50;}
+
+  .fade-in{animation:fadeIn .25s ease both;}
+  @keyframes fadeIn{from{opacity:0;transform:translateY(4px);}to{opacity:1;transform:translateY(0);}}
+  @media (prefers-reduced-motion: reduce){ .fade-in{animation:none;} .timerbar > div{transition:none;} }
+
+/* BYNEST browser override */
+button, select, input { color-scheme: dark; }
+.btn, .tab, .tier-btn, .choice-btn { text-shadow: none; }
+
+/* ===== BYNEST neon black + green theme ===== */
+:root{
+  --bg:#020604;
+  --bg-2:#06110A;
+  --panel:#07130C;
+  --panel-2:#0A1A10;
+  --bezel:#010301;
+  --line:#123A20;
+  --cyan:#39FF88;
+  --magenta:#39FF88;
+  --amber:#B8FF4D;
+  --danger:#FF4D6D;
+  --text:#E9FFF1;
+  --text-dim:#76A88B;
+  --input-bg:#041008;
+  --input-text:#E9FFF1;
+  color-scheme:dark;
+}
+@media (prefers-color-scheme: light){
+  :root{
+    --bg:#020604;--bg-2:#06110A;--panel:#07130C;--panel-2:#0A1A10;--bezel:#010301;
+    --line:#123A20;--cyan:#39FF88;--magenta:#39FF88;--amber:#B8FF4D;--danger:#FF4D6D;
+    --text:#E9FFF1;--text-dim:#76A88B;--input-bg:#041008;--input-text:#E9FFF1;color-scheme:dark;
+  }
+}
+body{
+  background:
+    radial-gradient(900px 600px at 12% -10%, rgba(57,255,136,.12), transparent 58%),
+    radial-gradient(700px 500px at 110% 10%, rgba(57,255,136,.07), transparent 58%),
+    repeating-linear-gradient(90deg, rgba(57,255,136,.025) 0 1px, transparent 1px 90px),
+    var(--bg);
+}
+.wrap{position:relative;z-index:2;}
+.console{border:1px solid rgba(57,255,136,.22);box-shadow:0 0 0 1px rgba(57,255,136,.06),0 30px 70px -30px rgba(0,0,0,.95),0 0 45px rgba(57,255,136,.07);}
+.screen{background:linear-gradient(180deg,#07140B,#030A06);border-color:#154D2A;box-shadow:inset 0 0 35px rgba(57,255,136,.025);}
+.brand .mark{background:linear-gradient(160deg,#39FF88,#0F9F52);color:#001C0A;box-shadow:0 0 18px rgba(57,255,136,.35);}
+.brand h1{color:#E9FFF1;text-shadow:0 0 14px rgba(57,255,136,.25);}
+.brand .tag{color:#63C988;}
+.profile-chip{background:#061109;border-color:#164D29;box-shadow:0 0 12px rgba(57,255,136,.06);}
+.profile-chip .av{background:#041008;border-color:#164D29;color:#39FF88;}
+.tab{background:#061109;border-color:#154D2A;color:#75B38C;box-shadow:inset 0 0 0 1px rgba(57,255,136,.02);}
+.tab:hover{color:#E9FFF1;border-color:#2A8E4D;text-shadow:0 0 10px rgba(57,255,136,.25);}
+.tab.active{background:#39FF88;color:#001C0A;border-color:#39FF88;box-shadow:0 0 18px rgba(57,255,136,.32);}
+.btn-primary{background:#39FF88;color:#001C0A;box-shadow:0 0 18px rgba(57,255,136,.25);}
+.btn-magenta{background:#B8FF4D;color:#071200;box-shadow:0 0 18px rgba(184,255,77,.18);}
+.btn-ghost{background:#041008;border-color:#164D29;}
+.btn-ghost:hover{border-color:#39FF88;color:#39FF88;box-shadow:0 0 14px rgba(57,255,136,.12);}
+.card,.fam-card,.rail,.lobby-row{background:#07150C;border-color:#154D2A;box-shadow:inset 0 0 18px rgba(57,255,136,.025);}
+.tier-btn{background:#041008;border-color:#154D2A;}
+.tier-btn:hover{border-color:#39FF88;box-shadow:0 0 12px rgba(57,255,136,.12);}
+.tier-btn.selected{background:#39FF88;color:#001C0A;border-color:#39FF88;box-shadow:0 0 14px rgba(57,255,136,.28);}
+.code-badge{color:#B8FF4D;border-color:#2B8F4F;background:#041008;text-shadow:0 0 12px rgba(184,255,77,.35);box-shadow:0 0 20px rgba(57,255,136,.08);}
+.timerbar{background:#031008;box-shadow:inset 0 0 0 1px #154D2A;}
+.timerbar>div{background:linear-gradient(90deg,#39FF88,#B8FF4D);box-shadow:0 0 10px rgba(57,255,136,.5);}
+.equation{color:#E9FFF1;text-shadow:0 0 16px rgba(57,255,136,.14);}
+.equation .op{color:#39FF88;text-shadow:0 0 16px rgba(57,255,136,.45);}
+.choice-btn{background:#041008;border-color:#154D2A;color:#E9FFF1;box-shadow:inset 0 0 16px rgba(57,255,136,.018);}
+.choice-btn:hover:not(:disabled){border-color:#39FF88;box-shadow:0 0 15px rgba(57,255,136,.13),inset 0 0 16px rgba(57,255,136,.035);}
+.choice-btn.correct{border-color:#39FF88;background:rgba(57,255,136,.12);color:#39FF88;box-shadow:0 0 18px rgba(57,255,136,.18);}
+.lobby-row:hover{border-color:#2A8E4D;box-shadow:0 0 14px rgba(57,255,136,.08);}
+.player-row{border-color:#12351F;}
+.player-row .av{background:#041008;border-color:#154D2A;color:#39FF88;}
+.player-row .pscore{color:#39FF88;text-shadow:0 0 10px rgba(57,255,136,.22);}
+.host-tag{color:#B8FF4D;border-color:#B8FF4D;}
+.footnote{color:#76A88B;}
+.feedback.correct{color:#39FF88;text-shadow:0 0 12px rgba(57,255,136,.25);}
+.winner-banner .crown{filter:drop-shadow(0 0 12px rgba(184,255,77,.35));}
+.board-row.winner{background:rgba(57,255,136,.08);box-shadow:inset 0 0 18px rgba(57,255,136,.03);}
+.board-row .rscore{color:#39FF88;text-shadow:0 0 10px rgba(57,255,136,.2);}
+.record-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:4px;}
+@media(max-width:720px){.record-grid{grid-template-columns:1fr;}}
+.record-card{position:relative;background:linear-gradient(180deg,#07170C,#041008);border:1px solid #164D29;border-radius:14px;padding:18px;text-align:center;box-shadow:0 0 22px rgba(57,255,136,.07),inset 0 0 20px rgba(57,255,136,.02);}
+.record-card::after{content:"";position:absolute;inset:0;border-radius:14px;pointer-events:none;box-shadow:inset 0 0 0 1px rgba(57,255,136,.05);}
+.record-rank{font-family:var(--font-mono);font-size:12px;color:#75B38C;letter-spacing:1px;}
+.record-name{font-size:18px;font-weight:700;margin:8px 0 4px;color:#E9FFF1;text-shadow:0 0 10px rgba(57,255,136,.12);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.record-score{font-family:var(--font-mono);font-size:30px;font-weight:700;color:#39FF88;text-shadow:0 0 16px rgba(57,255,136,.32);}
+.record-meta{font-family:var(--font-mono);font-size:12px;color:#76A88B;margin-top:8px;line-height:1.6;}
+.record-card.gold{border-color:#86B83C;box-shadow:0 0 28px rgba(184,255,77,.11),inset 0 0 24px rgba(184,255,77,.03);}
+.record-card.silver{border-color:#2C7850;}
+.record-card.bronze{border-color:#24563C;}
+.rank-badge{display:inline-flex;align-items:center;justify-content:center;min-width:38px;height:24px;padding:0 8px;border:1px solid #1D5D34;border-radius:999px;color:#B8FF4D;font-family:var(--font-mono);font-size:11px;font-weight:700;}
+.math-decor{position:fixed;inset:0;pointer-events:none;z-index:0;overflow:hidden;}
+.math-symbol{position:absolute;font-family:var(--font-mono);font-size:clamp(42px,7vw,96px);font-weight:700;color:rgba(57,255,136,.11);text-shadow:0 0 22px rgba(57,255,136,.08);user-select:none;animation:mathFloat 7s ease-in-out infinite;}
+.math-symbol.s1{left:2vw;top:17vh;transform:rotate(-10deg);animation-delay:-1s}.math-symbol.s2{right:3vw;top:24vh;transform:rotate(12deg);animation-delay:-3s}.math-symbol.s3{left:5vw;bottom:20vh;transform:rotate(8deg);animation-delay:-5s}.math-symbol.s4{right:5vw;bottom:14vh;transform:rotate(-8deg);animation-delay:-2s}.math-symbol.s5{left:18vw;top:5vh;font-size:32px}.math-symbol.s6{right:20vw;bottom:7vh;font-size:34px}.math-symbol.s7{right:13vw;top:10vh;font-size:28px}.math-symbol.s8{left:13vw;bottom:8vh;font-size:30px}
+@keyframes mathFloat{0%,100%{transform:translateY(0) rotate(-8deg);opacity:.55}50%{transform:translateY(-10px) rotate(8deg);opacity:.9}}
+@media(max-width:680px){.math-symbol.s1,.math-symbol.s2,.math-symbol.s3,.math-symbol.s4{font-size:54px;}.math-symbol.s5,.math-symbol.s6,.math-symbol.s7,.math-symbol.s8{opacity:.5;}}
+</style>
+</head>
+<body>
+<div class="math-decor" aria-hidden="true">
+  <span class="math-symbol s1">+</span>
+  <span class="math-symbol s2">−</span>
+  <span class="math-symbol s3">×</span>
+  <span class="math-symbol s4">÷</span>
+  <span class="math-symbol s5">+</span>
+  <span class="math-symbol s6">−</span>
+  <span class="math-symbol s7">×</span>
+  <span class="math-symbol s8">÷</span>
+</div>
+<div class="wrap">
+  <div class="topbar">
+    <div class="brand">
+      <div class="mark">B</div>
+      <div><h1>BYNEST</h1><div class="tag">split second math arena</div></div>
+    </div>
+    <div id="profile-slot"></div>
+  </div>
+  <div id="nav-slot"></div>
+  <div class="console"><div class="screen" id="screen"><div class="empty">Loading…</div></div></div>
+</div>
+<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-database-compat.js"></script>
+<script src="firebase-config.js"></script>
+<script>
+(() => {
+'use strict';
+const $=(s,r=document)=>r.querySelector(s), $$=(s,r=document)=>[...r.querySelectorAll(s)];
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const screen=()=>$('#screen');
+const PROFILE_KEY='bynest.profile.v1';
+const ME={id:'',username:localStorage.getItem(PROFILE_KEY)||'Player'};
+let timer=null, state=null, lobbyPoll=null, currentLobbyCode=null;
+let db=null, auth=null, backendReady=false;
+let firebaseLobbyUnsub=null, firebasePublicUnsub=null, firebaseLeaderboardUnsub=null;
+let LOBBY_CACHE={};
+let SCORE_CACHE=[];
+const FAMILIES={easy:{name:'Easy',desc:'+ / − only'},medium:{name:'Medium',desc:'+ − ×'},hard:{name:'Hard',desc:'+ − × ÷'},difficult:{name:'Difficult',desc:'bigger numbers'},insane:{name:'Insane',desc:'chained & huge'}};
+const ORDER=['easy','medium','hard','difficult','insane'];
+const RANGES={
+ easy:[{add:[1,6]},{add:[1,10]},{add:[5,15]}],
+ medium:[{mul:[2,8],add:[5,15]},{mul:[2,10],add:[10,25]},{mul:[2,12],add:[10,35]}],
+ hard:[{mul:[3,12],add:[10,40],divD:[2,8],divA:[2,8]},{mul:[5,15],add:[20,60],divD:[2,10],divA:[2,15]},{mul:[8,20],add:[30,80],divD:[2,12],divA:[2,20]}],
+ difficult:[{mul:[10,20],add:[40,100],divD:[2,12],divA:[5,15]},{mul:[15,28],add:[60,150],divD:[2,16],divA:[5,20]},{mul:[20,35],add:[100,200],divD:[2,20],divA:[5,25]}],
+ insane:[{mul:[15,30],add:[100,250],divD:[3,20],divA:[8,25],chain:[10,50]},{mul:[20,35],add:[150,350],divD:[3,25],divA:[10,30],chain:[10,65]},{mul:[25,45],add:[200,500],divD:[3,30],divA:[10,40],chain:[10,80]}]
+};
+const LEVELS={}; ORDER.forEach(f=>{for(let t=1;t<=3;t++)LEVELS[`${f}-${t}`]={label:`${FAMILIES[f].name} · ${t}`,family:f,tier:t};});
+const rand=a=>a[Math.floor(Math.random()*a.length)], pick=(a,b)=>Math.floor(Math.random()*(b-a+1))+a;
+const shuffle=a=>{a=[...a];for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;};
+const label=id=>LEVELS[id]?.label||id;
+function makeQuestion(id){
+ const L=LEVELS[id],c=RANGES[L.family][L.tier-1],f=L.family; let a,b,op,ans;
+ if(f==='easy'){op=rand(['+','−']);a=pick(c.add[0],c.add[1]);b=pick(c.add[0],c.add[1]);if(op==='−'&&b>a)[a,b]=[b,a];return{text:`${a} ${op} ${b}`,answer:op==='+'?a+b:a-b};}
+ if(f==='medium'){op=rand(['+','−','×']);if(op==='×'){a=pick(c.mul[0],c.mul[1]);b=pick(c.mul[0],c.mul[1]);}else{a=pick(c.add[0],c.add[1]);b=pick(1,c.add[1]);if(op==='−'&&b>a)[a,b]=[b,a];}return{text:`${a} ${op} ${b}`,answer:op==='+'?a+b:op==='−'?a-b:a*b};}
+ if(f==='hard'||f==='difficult'){op=rand(['+','−','×','÷']);if(op==='÷'){b=pick(c.divD[0],c.divD[1]);ans=pick(c.divA[0],c.divA[1]);a=b*ans;return{text:`${a} ÷ ${b}`,answer:ans};}if(op==='×'){a=pick(c.mul[0],c.mul[1]);b=pick(c.mul[0],c.mul[1]);return{text:`${a} × ${b}`,answer:a*b};}a=pick(c.add[0],c.add[1]);b=pick(Math.max(2,Math.floor(c.add[0]/2)),c.add[1]);if(op==='−'&&b>a)[a,b]=[b,a];return{text:`${a} ${op} ${b}`,answer:op==='+'?a+b:a-b};}
+ if(Math.random()<.5){op=rand(['+','−','×','÷']);if(op==='÷'){b=pick(c.divD[0],c.divD[1]);ans=pick(c.divA[0],c.divA[1]);a=b*ans;return{text:`${a} ÷ ${b}`,answer:ans};}if(op==='×'){a=pick(c.mul[0],c.mul[1]);b=pick(c.mul[0],c.mul[1]);return{text:`${a} × ${b}`,answer:a*b};}a=pick(c.add[0],c.add[1]);b=pick(Math.floor(c.add[0]/2),c.add[1]);if(op==='−'&&b>a)[a,b]=[b,a];return{text:`${a} ${op} ${b}`,answer:op==='+'?a+b:a-b};}
+ const x=pick(c.chain[0],c.chain[1]),y=pick(c.chain[0],c.chain[1]),z=pick(5,Math.floor(c.chain[1]/2)),o1=rand(['+','−']),o2=rand(['+','−']);let v=o1==='+'?x+y:x-y;v=o2==='+'?v+z:v-z;return{text:`${x} ${o1} ${y} ${o2} ${z}`,answer:v};
+}
+function choices(correct){const s=new Set([correct]);for(const d of shuffle([1,2,3,-1,-2,-3,5,-5,7,-7,10,-10,4,-4])){if(s.size>=4)break;s.add(correct+d);}while(s.size<4){let c=correct+pick(-15,15);if(c===correct)c++;s.add(c);}return shuffle([...s]);}
+function saveScore(e){
+  SCORE_CACHE=[...SCORE_CACHE,e].sort((a,b)=>b.score-a.score||a.timeMs-b.timeMs).slice(0,200);
+  if(backendReady){
+    const ref=db.ref('leaderboard').push();
+    ref.set({...e,createdAt:Date.now(),uid:ME.id}).catch(()=>{});
+  }
+}
+function scores(){return SCORE_CACHE.slice();}
+function nav(active){
+ $('#nav-slot').innerHTML=`<div class="tabs">
+  <button class="tab ${active==='home'?'active':''}" data-nav="home">Home</button>
+  <button class="tab ${active==='practice'?'active':''}" data-nav="practice">Practice</button>
+  <button class="tab ${active==='lobbies'?'active':''}" data-nav="lobbies">Lobbies</button>
+  <button class="tab ${active==='leaderboard'?'active':''}" data-nav="leaderboard">Leaderboard</button>
+ </div>`;
+ $$('[data-nav]').forEach(b=>b.onclick=()=>go(b.dataset.nav));
+}
+function profile(){const n=ME.username||'Player';$('#profile-slot').innerHTML=`<button class="profile-chip" id="profile-btn"><span class="av">${esc(n.slice(0,1).toUpperCase())}</span><span>${esc(n)}</span></button>`;$('#profile-btn').onclick=editProfile;}
+function shell(a){nav(a);profile();}
+function stopLobbyWatch(){if(lobbyPoll){clearInterval(lobbyPoll);lobbyPoll=null;}currentLobbyCode=null;}
+function go(v,params={}){if(timer){clearInterval(timer);timer=null;}state=null;if(v!=='lobbyRoom'&&v!=='lobbyGame'&&v!=='lobbyResults')stopLobbyWatch(); if(v==='home')home(); if(v==='practice')practice(params.level||'easy-1'); if(v==='lobbies')viewLobbies(); if(v==='lobbyRoom')viewLobbyRoom(params); if(v==='lobbyGame')viewLobbyGame(params); if(v==='lobbyResults')viewLobbyResults(params); if(v==='leaderboard')leaderboard(params.family||'all');}
+function editProfile(){screen().innerHTML=`<div class="fade-in" style="max-width:520px"><h2 class="title">Player profile</h2><p class="sub">Choose the name shown in lobby rooms and on the global leaderboard.</p><label class="field-label">Player name</label><input id="name" type="text" maxlength="20" value="${esc(ME.username)}" placeholder="Your name"><div style="height:14px"></div><div class="row"><button class="btn btn-primary" id="save">Save</button><button class="btn btn-ghost" id="cancel">Cancel</button></div></div>`;$('#save').onclick=()=>{ME.username=$('#name').value.trim()||'Player';localStorage.setItem(PROFILE_KEY,ME.username);home();};$('#cancel').onclick=home;}
+function home(){shell('home');screen().innerHTML=`<div class="fade-in"><h2 class="title">Welcome to BYNEST</h2><p class="sub">Sharpen your mental math with 10 timed multiple-choice problems across 15 difficulty tiers.</p><div class="grid grid-2"><div class="card"><div style="font-weight:700;font-size:17px;margin-bottom:6px">Quick Practice</div><div class="footnote" style="margin:0 0 14px">15 levels · 10 questions · 10 seconds each.</div><button class="btn btn-primary" id="play">Play now</button></div><div class="card"><div style="font-weight:700;font-size:17px;margin-bottom:6px">Multiplayer Lobby</div><div class="footnote" style="margin:0 0 14px">Create a room, invite another browser tab with a code, and race on the same question set.</div><button class="btn btn-magenta" id="lobby">Open lobbies</button></div></div><div class="divider"></div><div class="footnote">The lobby system uses Firebase Realtime Database, so rooms, players, shared questions, and the global leaderboard can sync across devices.</div></div>`;$('#play').onclick=practice;$('#lobby').onclick=viewLobbies;}
+function picker(sel){return `<div class="grid grid-2">${ORDER.map(f=>`<div class="fam-card"><div class="fam-name">${FAMILIES[f].name}</div><div class="fam-desc">${FAMILIES[f].desc}</div><div class="tier-row">${[1,2,3].map(t=>{const id=`${f}-${t}`;return `<button class="tier-btn ${sel===id?'selected':''}" data-level="${id}">${t}</button>`;}).join('')}</div></div>`).join('')}</div>`;}
+function practice(selected='easy-1'){shell('practice');let level=selected;function draw(){screen().innerHTML=`<div class="fade-in"><h2 class="title">Practice</h2><p class="sub">Choose one of 15 levels, then start a 10-question round.</p><div id="picker">${picker(level)}</div><div style="height:18px"></div><div class="row"><button class="btn btn-primary" id="start">Start / Restart</button><button class="btn btn-ghost" id="back-lobbies">Lobbies</button><span class="footnote" id="chosen">Selected: ${label(level)}</span></div></div>`;$$('[data-level]').forEach(b=>b.onclick=()=>{level=b.dataset.level;draw();});$('#start').onclick=()=>startGame(level);$('#back-lobbies').onclick=viewLobbies;}draw();}
+function startGame(level){const qs=[],seen=new Set();while(qs.length<10){const q=makeQuestion(level);if(!seen.has(q.text)){seen.add(q.text);qs.push(q);}}state={mode:'solo',level,questions:qs,index:0,score:0,started:performance.now(),questionStarted:performance.now()};renderQuestion();}
+function renderQuestion(){if(state.index>=state.questions.length){finishGame();return;}const q=state.questions[state.index],cs=choices(q.answer);state.questionStarted=performance.now();screen().innerHTML=`<div class="game-layout fade-in"><div><div class="qnum">Question ${state.index+1} / 10 <span style="float:right">Score: ${state.score}</span></div><div class="timerbar"><div id="bar" style="width:100%"></div></div><div class="equation">${esc(q.text)}</div><div class="choices">${cs.map((c,i)=>`<button class="choice-btn" data-choice="${i}">${c}</button>`).join('')}</div><div id="feedback" class="feedback"></div><div style="height:18px"></div><button class="btn btn-ghost" id="quit">Quit round</button></div><aside class="rail"><h3>ROUND</h3><div class="footnote" style="margin:0">${esc(label(state.level))}</div><div class="divider"></div><h3>RULES</h3><div class="footnote" style="margin:0">10 questions<br>10 seconds each<br>Multiple choice</div></aside></div>`;$$('[data-choice]').forEach(b=>b.onclick=()=>answer(Number(b.dataset.choice),cs,q.answer));$('#quit').onclick=()=>{const lv=state.level;state=null;go('practice',{level:lv});};timer=setInterval(()=>{const rem=Math.max(0,10000-(performance.now()-state.questionStarted));const bar=$('#bar');if(bar)bar.style.width=(rem/10000*100)+'%';if(rem<=0){clearInterval(timer);timer=null;timeout();}},50);}
+function timeout(){if(!state)return;$$('[data-choice]').forEach(b=>b.disabled=true);const f=$('#feedback');if(f){f.textContent="Time's up!";f.className='feedback wrong';}setTimeout(()=>{if(state){state.index++;renderQuestion();}},600);}
+function answer(i,cs,correct){if(!state)return;if(timer){clearInterval(timer);timer=null;}const b=$$('[data-choice]');b.forEach(x=>x.disabled=true);const chosen=cs[i],f=$('#feedback');if(chosen===correct){state.score++;b[i].classList.add('correct');f.textContent='Correct!';f.className='feedback correct';}else{b[i].classList.add('wrong');const idx=cs.indexOf(correct);if(idx>=0)b[idx].classList.add('correct');f.textContent='Correct answer: '+correct;f.className='feedback wrong';}setTimeout(()=>{if(state){state.index++;renderQuestion();}},550);}
+function finishGame(){if(timer){clearInterval(timer);timer=null;}const timeMs=Math.round(performance.now()-state.started),level=state.level;const r={name:ME.username||'Player',level,score:state.score,total:10,timeMs};saveScore(r);screen().innerHTML=`<div class="fade-in" style="max-width:520px"><h2 class="title">Round complete</h2><div class="card"><div class="row" style="justify-content:space-between"><div><div class="footnote" style="margin:0">Score</div><div style="font-family:var(--font-mono);font-size:30px;font-weight:700;color:var(--cyan)">${r.score} / 10</div></div><div><div class="footnote" style="margin:0">Time</div><div style="font-family:var(--font-mono);font-size:30px;font-weight:700">${(r.timeMs/1000).toFixed(1)}s</div></div></div></div><div style="height:16px"></div><div class="footnote">${esc(label(level))} · Saved to the global BYNEST leaderboard.</div><div style="height:14px"></div><div class="row"><button class="btn btn-primary" id="again">Play again</button><button class="btn btn-ghost" id="home">Back home</button></div></div>`;$('#again').onclick=()=>startGame(level);$('#home').onclick=home;state=null;}
+
+// ---------------- Realtime lobby + leaderboard backend ----------------
+function hydrateLobbyCache(data){LOBBY_CACHE=data||{};}
+function getLobby(code){return LOBBY_CACHE[code]||null;}
+function sanitizeLobby(lobby){return JSON.parse(JSON.stringify(lobby));}
+function saveLobby(lobby){
+  LOBBY_CACHE[lobby.code]=sanitizeLobby(lobby);
+  if(backendReady) db.ref('lobbies/'+lobby.code).set(LOBBY_CACHE[lobby.code]).catch(()=>{});
+}
+function deleteLobby(code){
+  delete LOBBY_CACHE[code];
+  if(backendReady) db.ref('lobbies/'+code).remove().catch(()=>{});
+}
+function genCode(){const chars='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';let s='';for(let i=0;i<5;i++)s+=chars[Math.floor(Math.random()*chars.length)];return s;}
+function sessionQuestions(levelId){const qs=[],seen=new Set();while(qs.length<10){const q=makeQuestion(levelId);if(!seen.has(q.text)){seen.add(q.text);qs.push(q);}}return qs;}
+function familyPickerHtml(selected){return picker(selected);}
+function wireFamilyPicker(root,onPick){$$('[data-level]',root).forEach(b=>b.onclick=()=>onPick(b.dataset.level));}
+function currentPlayer(lobby){return lobby?.players?.[ME.id]||null;}
+function playerList(lobby){return Object.values(lobby?.players||{}).sort((a,b)=>(a.joinedAt||0)-(b.joinedAt||0));}
+function lobbyCleanup(){
+  const now=Date.now();
+  Object.keys(LOBBY_CACHE).forEach(code=>{
+    const l=LOBBY_CACHE[code];
+    if(l && now-(l.createdAt||now)>24*60*60*1000){ delete LOBBY_CACHE[code]; if(backendReady) db.ref('lobbies/'+code).remove().catch(()=>{}); }
+  });
+}
+function startBackendListeners(){
+  if(!backendReady)return;
+  if(firebaseLeaderboardUnsub)firebaseLeaderboardUnsub();
+  const lbRef=db.ref('leaderboard');
+  const lbHandler=snap=>{
+    const raw=snap.val()||{};
+    SCORE_CACHE=Object.values(raw).sort((a,b)=>b.score-a.score||a.timeMs-b.timeMs).slice(0,200);
+    if($('#lb')) renderLeaderboardRows();
+  };
+  lbRef.on('value',lbHandler);
+  firebaseLeaderboardUnsub=()=>lbRef.off('value',lbHandler);
+}
+function subscribePublicLobbies(render){
+  if(!backendReady)return ()=>{};
+  const ref=db.ref('lobbies');
+  const handler=snap=>{hydrateLobbyCache(snap.val()||{});render();};
+  ref.on('value',handler);
+  const unsub=()=>ref.off('value',handler);
+  firebasePublicUnsub=unsub;
+  return unsub;
+}
+function subscribeLobby(code,render){
+  if(firebaseLobbyUnsub)firebaseLobbyUnsub();
+  if(!backendReady)return ()=>{};
+  const ref=db.ref('lobbies/'+code);
+  const handler=snap=>{
+    if(snap.exists()){LOBBY_CACHE[code]=snap.val();render(LOBBY_CACHE[code]);}
+    else {delete LOBBY_CACHE[code];render(null);}
+  };
+  ref.on('value',handler);
+  firebaseLobbyUnsub=()=>ref.off('value',handler);
+  return firebaseLobbyUnsub;
+}
+function stopLobbyWatch(){
+  if(lobbyPoll){clearInterval(lobbyPoll);lobbyPoll=null;}
+  if(firebaseLobbyUnsub){firebaseLobbyUnsub();firebaseLobbyUnsub=null;}
+  if(firebasePublicUnsub){firebasePublicUnsub();firebasePublicUnsub=null;}
+  currentLobbyCode=null;
+}
+function viewLobbies(){
+  stopLobbyWatch();shell('lobbies');lobbyCleanup();
+  screen().innerHTML=`<div class="fade-in"><h2 class="title">Lobbies</h2><p class="sub">Create a room, invite friends with a 5-character code, or join a public room. Rooms and player lists sync across devices.</p><div class="grid grid-2"><div class="card"><div style="font-weight:600;margin-bottom:10px;">Join a lobby</div><label class="field-label">Have a code?</label><div class="row"><input type="text" id="join-code" maxlength="5" placeholder="ABCDE" style="text-transform:uppercase;letter-spacing:3px"><button class="btn btn-primary" id="join-btn">Join</button></div><div class="footnote" id="join-err" style="color:var(--danger);"></div></div><div class="card"><div style="font-weight:600;margin-bottom:10px;">Host a lobby</div><div class="footnote" style="margin:0 0 12px;">Create a public or private multiplayer room with shared questions and a live scoreboard.</div><button class="btn btn-magenta btn-block" id="create-btn">Create lobby</button></div></div><div class="divider"></div><div style="font-weight:600;margin-bottom:10px;">Available public rooms</div><div id="public-list"><div class="empty">Loading rooms…</div></div><div class="footnote">Cross-device rooms use the Firebase realtime backend configured for this BYNEST site.</div></div>`;
+  $('#join-btn').onclick=()=>joinLobbyByCode($('#join-code').value.trim().toUpperCase());
+  $('#join-code').addEventListener('keydown',e=>{if(e.key==='Enter')$('#join-btn').click();});
+  $('#create-btn').onclick=()=>viewCreateLobby();
+  const drawPublic=()=>{const list=$('#public-list');if(!list)return;const rows=Object.values(LOBBY_CACHE).filter(l=>l&&l.status==='waiting'&&l.isPublic&&Date.now()-(l.createdAt||Date.now())<24*60*60*1000).sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));list.innerHTML=rows.length?rows.map(l=>`<div class="lobby-row" style="margin-bottom:8px"><div><div class="lname">${esc(l.hostName||'Host')}&rsquo;s lobby</div><div class="lmeta">${esc(label(l.level))} · Multiplayer · code ${esc(l.code)} · ${playerList(l).length} player${playerList(l).length===1?'':'s'}</div></div><button class="btn btn-ghost" data-join="${esc(l.code)}">Join</button></div>`).join(''):'<div class="empty">No public lobbies right now — create one to get started.</div>';$$('[data-join]').forEach(b=>b.onclick=()=>joinLobbyByCode(b.dataset.join));};
+  drawPublic();
+  if(backendReady)subscribePublicLobbies(drawPublic);
+  else drawPublic();
+ }
+function viewCreateLobby(){
+ stopLobbyWatch();shell('lobbies');let mode='multiplayer',isPublic=true,selectedLevel='easy-1';
+ function draw(){screen().innerHTML=`<div class="fade-in" style="max-width:620px"><h2 class="title">Create a lobby</h2><label class="field-label">Mode</label><div class="toggle-group" id="mode-toggle"><div class="toggle-opt ${mode==='solo'?'on':''}" data-mode="solo">Solo</div><div class="toggle-opt ${mode==='multiplayer'?'on':''}" data-mode="multiplayer">Multiplayer</div></div><div style="height:16px"></div>${mode==='multiplayer'?'<label class="field-label">Visibility</label><div class="toggle-group" id="vis-toggle"><div class="toggle-opt '+(isPublic?'on':'')+'" data-vis="public">Public</div><div class="toggle-opt '+(!isPublic?'on':'')+'" data-vis="private">Private (code only)</div></div><div style="height:16px"></div>':''}<label class="field-label">Difficulty</label><div id="level-pick">${picker(selectedLevel)}</div><div style="height:18px"></div><div class="row"><button class="btn btn-primary" id="create-go">Create lobby</button><button class="btn btn-ghost" id="create-cancel">Cancel</button></div></div>`;
+ $$('#mode-toggle [data-mode]').forEach(o=>o.onclick=()=>{mode=o.dataset.mode;draw();});
+ if(mode==='multiplayer')$$('#vis-toggle [data-vis]').forEach(o=>o.onclick=()=>{isPublic=o.dataset.vis==='public';draw();});
+ $$('#level-pick [data-level]').forEach(b=>b.onclick=()=>{selectedLevel=b.dataset.level;draw();});
+ $('#create-cancel').onclick=()=>viewLobbies();
+ $('#create-go').onclick=()=>createLobby({mode,isPublic:mode==='multiplayer'?isPublic:false,level:selectedLevel});
+ }
+ draw();
+}
+async function createLobby(cfg){
+  const button=$('#create-go');if(button)button.disabled=true;
+  if(!backendReady){if(button){button.disabled=false;button.textContent='Backend not configured';}return;}
+  let code='',attempts=0;
+  do{code=genCode();attempts++;const snap=await db.ref('lobbies/'+code).get();if(!snap.exists())break;}while(attempts<10);
+  if(attempts>=10){if(button){button.disabled=false;button.textContent='Could not create a room';}return;}
+  const now=Date.now();
+  const lobby={code,hostId:ME.id,hostName:ME.username,mode:cfg.mode,isPublic:cfg.mode==='multiplayer'&&!!cfg.isPublic,level:cfg.level,status:'waiting',createdAt:now,startedAt:null,questions:null,winnerId:null,winnerName:null,resultsSaved:false,players:{}};
+  lobby.players[ME.id]={id:ME.id,name:ME.username,joinedAt:now,score:0,total:0,finished:false,finishTime:null};
+  LOBBY_CACHE[code]=lobby;
+  await db.ref('lobbies/'+code).set(lobby);
+  go('lobbyRoom',{code});
+}
+async function joinLobbyByCode(code){
+  if(!code||code.length<4){const err=$('#join-err');if(err)err.textContent='Enter the 5-character code.';return;}
+  if(!backendReady){const err=$('#join-err');if(err)err.textContent='Realtime backend is not configured yet.';return;}
+  const err=$('#join-err');
+  try{
+    const snap=await db.ref('lobbies/'+code).get();
+    if(!snap.exists()){if(err)err.textContent='No lobby found with that code.';return;}
+    const lobby=snap.val();
+    if(lobby.status!=='waiting'){if(err)err.textContent='That lobby already started.';return;}
+    if(lobby.mode==='solo'){if(err)err.textContent='That room is set to solo.';return;}
+    const now=Date.now();lobby.players=lobby.players||{};lobby.players[ME.id]={id:ME.id,name:ME.username,joinedAt:now,score:0,total:0,finished:false,finishTime:null};
+    LOBBY_CACHE[code]=lobby;await db.ref('lobbies/'+code).set(lobby);go('lobbyRoom',{code});
+  }catch(e){if(err)err.textContent='Could not join that lobby — check the code and try again.';}
+}
+
+function viewLobbyRoom({code}){
+ stopLobbyWatch();currentLobbyCode=code;shell('lobbies');
+ function render(lobby=getLobby(code)){
+  if(!lobby){screen().innerHTML='<div class="empty">This lobby no longer exists.</div>';return;}
+  if(lobby.status==='playing'){go('lobbyGame',{code});return;}
+  if(lobby.status==='finished'){go('lobbyResults',{code});return;}
+  const isHost=lobby.hostId===ME.id,players=playerList(lobby);
+  screen().innerHTML=`<div class="fade-in"><div class="row" style="justify-content:space-between;flex-wrap:wrap"><div><h2 class="title" style="margin-bottom:2px">Lobby room</h2><div class="footnote" style="margin:0">${esc(label(lobby.level))} · ${lobby.isPublic?'Public':'Private'}</div></div><div style="text-align:right"><div class="footnote" style="margin:0 0 4px">Invite code</div><div class="code-badge">${esc(code)}</div></div></div><div class="divider"></div><div style="font-weight:600;margin-bottom:8px">Players (${players.length})</div><div class="card" style="margin-bottom:18px">${players.length?players.map(p=>`<div class="player-row"><span class="av">${esc((p.name||'?').slice(0,1).toUpperCase())}</span><span class="pname">${esc(p.name||'Player')}${p.id===lobby.hostId?' <span class="host-tag">HOST</span>':''}</span><span class="pscore">${p.score||0}/${p.total||0}</span></div>`).join(''):'<div class="empty">Waiting for players…</div>'}</div><div class="row">${isHost?'<button class="btn btn-primary" id="start-lobby">Start game</button>':'<div class="footnote" style="margin:0">Waiting for '+esc(lobby.hostName)+' to start…</div>'}<button class="btn btn-ghost" id="copy-code">Copy code</button><button class="btn btn-ghost" id="leave-lobby">Leave</button></div></div>`;
+  if(isHost)$('#start-lobby').onclick=()=>startLobbyGame(code);
+  $('#copy-code').onclick=async()=>{try{await navigator.clipboard.writeText(code);$('#copy-code').textContent='Copied!';setTimeout(()=>{const b=$('#copy-code');if(b)b.textContent='Copy code';},1000);}catch(e){}};
+  $('#leave-lobby').onclick=async()=>{const current=getLobby(code);if(current){if(current.hostId===ME.id){await deleteLobby(code);}else{delete current.players[ME.id];saveLobby(current);}}go('lobbies');};
+ }
+ const initial=getLobby(code);if(initial)render(initial);else screen().innerHTML='<div class="empty">Loading lobby…</div>';
+ if(backendReady)subscribeLobby(code,render);
+}
+async function startLobbyGame(code){const lobby=getLobby(code);if(!lobby||lobby.hostId!==ME.id)return;lobby.questions=sessionQuestions(lobby.level);lobby.startedAt=Date.now();lobby.status='playing';lobby.resultsSaved=false;Object.values(lobby.players||{}).forEach(p=>{p.score=0;p.total=0;p.finished=false;p.finishTime=null;});saveLobby(lobby);go('lobbyGame',{code});}
+function viewLobbyGame({code}){
+ stopLobbyWatch();currentLobbyCode=code;shell('lobbies');
+ const lobby0=getLobby(code);if(!lobby0){screen().innerHTML='<div class="empty">The lobby no longer exists.</div>';return;}
+ function render(){const lobby=getLobby(code);if(!lobby){screen().innerHTML='<div class="empty">The lobby no longer exists.</div>';return;}if(lobby.status==='finished'){go('lobbyResults',{code});return;}if(!state||state.mode!=='lobby'||state.code!==code){startLobbyLocalGame(lobby);return;}const me=lobby.players?.[ME.id];const players=playerList(lobby);const rail=$('#rail');if(rail)rail.innerHTML='<h3>SCOREBOARD</h3>'+players.slice().sort((a,b)=>(b.score||0)-(a.score||0)).map(p=>`<div class="player-row"><span class="av">${esc((p.name||'?').slice(0,1).toUpperCase())}</span><span class="pname">${esc(p.name||'Player')}</span><span class="pscore">${p.score||0}/${p.total||0}${p.finished?' ✓':''}</span></div>`).join('');if(me?.finished&&players.length&&players.every(p=>p.finished)&&lobby.hostId===ME.id)finalizeLobby(code,lobby);}
+ function startLobbyLocalGame(lobby){const qs=Array.isArray(lobby.questions)?lobby.questions:sessionQuestions(lobby.level);state={mode:'lobby',code,level:lobby.level,questions:qs,index:0,score:0,started:performance.now(),questionStarted:performance.now()};renderLobbyQuestion();}
+ function renderLobbyQuestion(){if(!state)return;if(state.index>=state.questions.length){finishLobbyLocal();return;}const lobby=getLobby(code);if(!lobby)return;const q=state.questions[state.index],cs=choices(q.answer);state.questionStarted=performance.now();screen().innerHTML=`<div class="game-layout fade-in"><div><div class="qnum">Question ${state.index+1} / 10 <span style="float:right">Score: ${state.score}</span></div><div class="timerbar"><div id="bar" style="width:100%"></div></div><div class="equation">${esc(q.text)}</div><div class="choices">${cs.map((c,i)=>`<button class="choice-btn" data-choice="${i}">${c}</button>`).join('')}</div><div id="feedback" class="feedback"></div><div style="height:18px"></div><button class="btn btn-ghost" id="quit">Leave round</button></div><aside class="rail" id="rail"><h3>SCOREBOARD</h3>${playerList(lobby).map(p=>`<div class="player-row"><span class="av">${esc((p.name||'?').slice(0,1).toUpperCase())}</span><span class="pname">${esc(p.name||'Player')}</span><span class="pscore">${p.score||0}/${p.total||0}${p.finished?' ✓':''}</span></div>`).join('')}<div class="divider"></div><h3>RULES</h3><div class="footnote" style="margin:0">Same 10 questions for everyone.<br>10 seconds per question.<br>Highest score wins.</div></aside></div>`;$$('[data-choice]').forEach(b=>b.onclick=()=>lobbyAnswer(Number(b.dataset.choice),cs,q.answer));$('#quit').onclick=()=>leaveLobbyGame(code);timer=setInterval(()=>{if(!state)return;const rem=Math.max(0,10000-(performance.now()-state.questionStarted));const bar=$('#bar');if(bar)bar.style.width=(rem/10000*100)+'%';if(rem<=0){clearInterval(timer);timer=null;lobbyTimeout();}},50);}
+ function lobbyTimeout(){if(!state)return;$$('[data-choice]').forEach(b=>b.disabled=true);const f=$('#feedback');if(f){f.textContent="Time's up!";f.className='feedback wrong';}setTimeout(()=>{if(state){state.index++;updateLobbyProgress(code);renderLobbyQuestion();}},600);}
+ function lobbyAnswer(i,cs,correct){if(!state)return;if(timer){clearInterval(timer);timer=null;}const b=$$('[data-choice]');b.forEach(x=>x.disabled=true);const chosen=cs[i],f=$('#feedback');if(chosen===correct){state.score++;b[i].classList.add('correct');f.textContent='Correct!';f.className='feedback correct';}else{b[i].classList.add('wrong');const idx=cs.indexOf(correct);if(idx>=0)b[idx].classList.add('correct');f.textContent='Correct answer: '+correct;f.className='feedback wrong';}setTimeout(()=>{if(state){state.index++;updateLobbyProgress(code);renderLobbyQuestion();}},550);}
+ function updateLobbyProgress(code){const lobby=getLobby(code);if(!lobby||!lobby.players?.[ME.id])return;const p=lobby.players[ME.id];p.score=state?.score||0;p.total=state?Math.min(state.index,10):10;p.finished=!!state&&state.index>=state.questions.length;p.finishTime=p.finished?Math.round(performance.now()-state.started):null;saveLobby(lobby);}
+ function finishLobbyLocal(){if(timer){clearInterval(timer);timer=null;}updateLobbyProgress(code);const lobby=getLobby(code);if(lobby&&lobby.players?.[ME.id]){lobby.players[ME.id].score=state.score;lobby.players[ME.id].total=10;lobby.players[ME.id].finished=true;lobby.players[ME.id].finishTime=Math.round(performance.now()-state.started);saveLobby(lobby);}const r={name:ME.username,level:state.level,score:state.score,total:10,timeMs:Math.round(performance.now()-state.started),mode:'multiplayer'};saveScore(r);state=null;setTimeout(()=>{const latest=getLobby(code);if(latest&&latest.hostId===ME.id)finalizeLobby(code,latest);if(latest&&latest.status==='finished')go('lobbyResults',{code});},50);}
+ async function leaveLobbyGame(code){const lobby=getLobby(code);if(lobby){if(lobby.hostId===ME.id){deleteLobby(code);}else{delete lobby.players[ME.id];saveLobby(lobby);}}state=null;go('lobbies');}
+ render();if(backendReady)subscribeLobby(code,render);else lobbyPoll=setInterval(render,350);
+}
+async function finalizeLobby(code,lobby){if(lobby.status!=='playing'||lobby.resultsSaved)return;const players=playerList(lobby);if(!players.length||!players.every(p=>p.finished))return;const winner=players.slice().sort((a,b)=>(b.score||0)-(a.score||0)||(a.finishTime||Infinity)-(b.finishTime||Infinity))[0];lobby.winnerId=winner.id;lobby.winnerName=winner.name;lobby.status='finished';lobby.resultsSaved=true;saveLobby(lobby);}
+function viewLobbyResults({code}){
+ stopLobbyWatch();shell('lobbies');
+ function render(lobby=getLobby(code)){if(!lobby){go('lobbies');return;}const players=playerList(lobby).sort((a,b)=>(b.score||0)-(a.score||0)||(a.finishTime||Infinity)-(b.finishTime||Infinity));screen().innerHTML=`<div class="fade-in" style="max-width:620px"><div class="winner-banner"><div class="crown">🏆</div><div class="wname">${esc(lobby.winnerName||'—')}</div><div class="wsub">wins the round</div></div><div class="card">${players.map((p,i)=>`<div class="board-row ${p.id===lobby.winnerId?'winner':''}"><span class="rank">#${i+1}</span><span class="rname">${esc(p.name||'Player')}</span><span class="rscore">${p.score||0}/${p.total||10}</span><span class="rtime">${p.finishTime?((p.finishTime/1000).toFixed(1)+'s'):'—'}</span></div>`).join('')}</div><div style="height:16px"></div><div class="row"><button class="btn btn-primary" id="new-lobby">Host another</button><button class="btn btn-ghost" id="again-practice">Practice</button><button class="btn btn-ghost" id="home-btn">Back home</button></div><div class="footnote">Results are saved to the global leaderboard.</div></div>`;$('#new-lobby').onclick=viewLobbies;$('#again-practice').onclick=practice;$('#home-btn').onclick=home;}
+ render();if(backendReady)subscribeLobby(code,render);}
+function bestRecords(rows){
+ const byPlayer=new Map();
+ rows.forEach(r=>{
+   const key=r.uid||r.userId||r.name||'Player';
+   const prev=byPlayer.get(key);
+   if(!prev || r.score>prev.score || (r.score===prev.score && r.timeMs<prev.timeMs)) byPlayer.set(key,r);
+ });
+ return [...byPlayer.values()].sort((a,b)=>b.score-a.score||a.timeMs-b.timeMs).slice(0,3);
+}
+function renderLeaderboardRows(){
+ const filter=document.querySelector('#leaderboard-root')?.dataset?.filter||'all';
+ const rows=scores().filter(r=>filter==='all'||LEVELS[r.level]?.family===filter);
+ const top=bestRecords(rows);
+ const lb=$('#lb');if(!lb)return;
+ lb.innerHTML=top.length?`<div class="record-grid">${top.map((r,i)=>`<div class="record-card ${i===0?'gold':i===1?'silver':'bronze'}"><div class="rank-badge">TOP ${i+1}</div><div class="record-name">${esc(r.name||'Player')}</div><div class="record-score">${r.score}/${r.total}</div><div class="record-meta">${(r.timeMs/1000).toFixed(1)}s · ${esc(label(r.level))}</div></div>`).join('')}</div>`:'<div class="empty">No global records yet. Play a round!</div>';
+}
+function leaderboard(filter='all'){shell('leaderboard');screen().innerHTML=`<div id="leaderboard-root" data-filter="${esc(filter)}" class="fade-in"><h2 class="title">Global Records</h2><p class="sub">Only the top 3 records are shown. Correct answers come first; fastest time breaks ties.</p><div class="row" style="margin-bottom:16px;flex-wrap:wrap">${['all',...ORDER].map(f=>`<button class="tab ${filter===f?'active':''}" data-f="${f}">${f==='all'?'All':FAMILIES[f].name}</button>`).join('')}</div><div class="card"><div id="lb">Loading…</div></div></div>`;$$('[data-f]').forEach(b=>b.onclick=()=>leaderboard(b.dataset.f));renderLeaderboardRows();}
+async function initBackend(){
+  try{
+    const cfg=window.BYNEST_FIREBASE_CONFIG||{};
+    if(!cfg.apiKey||String(cfg.apiKey).startsWith('PASTE_')||!cfg.databaseURL){throw new Error('Firebase config is missing');}
+    firebase.initializeApp(cfg);auth=firebase.auth();db=firebase.database();
+    await auth.signInAnonymously();
+    ME.id=auth.currentUser.uid;backendReady=true;startBackendListeners();
+  }catch(e){
+    backendReady=false;
+    screen().innerHTML=`<div class="fade-in" style="max-width:620px"><h2 class="title">BYNEST needs its realtime backend</h2><p class="sub">The web game is ready, but Firebase has not been configured yet. Add your Firebase web config to <b>firebase-config.js</b>, enable Anonymous Authentication, and create a Realtime Database.</p><div class="card"><div style="font-weight:700;margin-bottom:8px">Error</div><div class="footnote">${esc(e.message||e)}</div></div></div>`;
+    return;
+  }
+  profile();home();
+}
+initBackend();
+})();
+</script>
+</body>
+</html>
